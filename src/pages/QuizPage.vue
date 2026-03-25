@@ -17,7 +17,13 @@ sessionStorage.removeItem(RESULT_STORAGE_KEY)
 const totalQuestions = questions.length
 const currentQuestion = computed(() => questions[currentIndex.value] ?? null)
 const progressText = computed(() => `${Math.min(currentIndex.value + 1, totalQuestions)}/${totalQuestions}`)
-const progressWidth = computed(() => `${(Math.min(currentIndex.value + 1, totalQuestions) / totalQuestions) * 100}%`)
+const progressWidth = computed(() => {
+  if (totalQuestions === 0) {
+    return '0%'
+  }
+
+  return `${(Math.min(currentIndex.value + 1, totalQuestions) / totalQuestions) * 100}%`
+})
 
 function onAnswerTap(answer: Answer): void {
   if (!currentQuestion.value || isDone.value) {
