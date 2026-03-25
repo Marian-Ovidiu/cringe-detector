@@ -1,25 +1,170 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import type { MatchOutput } from '../engine/matcher'
 import { matchBestMeme } from '../engine/matcher'
 import { useQuizSession } from '../composables/useQuizSession'
 import { questions } from '../data/questions'
+import { memes } from '../data/memes'
+import type { CompareResult } from '../types/quiz'
 
 const result = ref<MatchOutput | null>(null)
 const imageFailed = ref(false)
+const shareFeedback = ref('')
+const friendResult = ref<CompareResult | null>(null)
 const quizSession = useQuizSession()
+const route = useRoute()
+const router = useRouter()
+
+function normalizeMemeId(value: string): string {
+  return value.trim().toLowerCase().replaceAll('_', '-')
+}
+
+function parseQueryResult(): MatchOutput | null {
+  const memeQuery = typeof route.query.meme === 'string' ? route.query.meme : ''
+  const scoreQuery = typeof route.query.score === 'string' ? route.query.score : ''
+  const score = Number(scoreQuery)
+
+  if (!memeQuery || !Number.isFinite(score)) {
+    return null
+  }
+
+  const normalizedId = normalizeMemeId(memeQuery)
+  const meme = memes.find((item) => normalizeMemeId(item.id) === normalizedId)
+  if (!meme) {
+    return null
+  }
+
+  return {
+    meme,
+    percentage: Math.max(0, Math.min(100, Math.round(score))),
+  }
+}
+
+function buildShareUrl(memeId: string, percentage: number): string {
+  const params = new URLSearchParams({
+    ref: `${memeId}:${percentage}`,
+  })
+  return `${window.location.origin}/quiz?${params.toString()}`
+}
+
+const shareUrl = computed(() => {
+  if (!result.value) {
+    return window.location.href
+  }
+
+  return buildShareUrl(result.value.meme.id, result.value.percentage)
+})
+
+const shareText = computed(() => {
+  if (!result.value) {
+    return ''
+  }
+
+  return `I got ${result.value.percentage}% cringe 💀
+You are: ${result.value.meme.title}
+
+Try it: ${shareUrl.value}`
+})
+
+const rarityLabel = computed(() => {
+  if (!result.value) {
+    return ''
+  }
+
+  if (result.value.meme.rarity === 'legendary') {
+    return 'Legendary 🔥'
+  }
+
+  if (result.value.meme.rarity === 'rare') {
+    return 'Rare ⚡'
+  }
+
+  return 'Common'
+})
+
+const compareFeedback = computed(() => {
+  if (!result.value || !friendResult.value) {
+    return ''
+  }
+
+  const diff = result.value.percentage - friendResult.value.percentage
+  if (diff >= 12) {
+    return 'You are more cringe. Dominant performance 💀'
+  }
+
+  if (diff <= -12) {
+    return 'You got destroyed. Train harder 💀'
+  }
+
+  return 'Close match. Both concerning.'
+})
+
+function setShareFeedback(value: string): void {
+  shareFeedback.value = value
+  window.setTimeout(() => {
+    shareFeedback.value = ''
+  }, 1800)
+}
+
+async function onShare(): Promise<void> {
+  if (!result.value) {
+    return
+  }
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: 'Cringe Detector',
+        text: shareText.value,
+        url: shareUrl.value,
+      })
+      setShareFeedback('shared 💀')
+      return
+    }
+
+    await navigator.clipboard.writeText(shareText.value)
+    setShareFeedback('copied 💀')
+  } catch (error) {
+    const maybeError = error as Error
+    if (maybeError.name === 'AbortError') {
+      return
+    }
+    setShareFeedback('share failed')
+  }
+}
 
 try {
-  const savedResult = quizSession.loadResult()
-  if (savedResult) {
-    result.value = savedResult
+  const queryResult = parseQueryResult()
+  if (queryResult) {
+    result.value = queryResult
+    quizSession.saveResult(queryResult)
+    quizSession.clearFriendResult()
   } else {
-    const savedAnswers = quizSession.loadAnswers()
-    if (savedAnswers.length === questions.length) {
-      const recovered = matchBestMeme(savedAnswers)
-      quizSession.saveResult(recovered)
-      result.value = recovered
+    const savedResult = quizSession.loadResult()
+    if (savedResult) {
+      result.value = savedResult
+    } else {
+      const savedAnswers = quizSession.loadAnswers()
+      if (savedAnswers.length === questions.length) {
+        const recovered = matchBestMeme(savedAnswers)
+        quizSession.saveResult(recovered)
+        result.value = recovered
+      }
     }
+  }
+
+  if (result.value) {
+    friendResult.value = quizSession.loadFriendResult()
+
+    router.replace({
+      path: '/result',
+      query: {
+        meme: result.value.meme.id,
+        score: String(result.value.percentage),
+      },
+    })
+    quizSession.clearAnswers()
   }
 } catch {
   result.value = null
@@ -41,8 +186,15 @@ try {
       <div v-else class="meme-image fallback">Meme loading like your self-awareness.</div>
 
       <h1>{{ result.meme.title }}</h1>
+      <p class="rarity" :class="`rarity-${result.meme.rarity}`">{{ rarityLabel }}</p>
       <p class="score">{{ result.percentage }}% cringe match</p>
       <p class="summary">{{ result.meme.roast }}</p>
+
+      <section v-if="friendResult" class="compare-box">
+        <p class="compare-line">YOU: {{ result.percentage }}% cringe</p>
+        <p class="compare-line">FRIEND: {{ friendResult.percentage }}% cringe</p>
+        <p class="compare-feedback">{{ compareFeedback }}</p>
+      </section>
     </section>
 
     <section v-else class="result-card">
@@ -50,7 +202,14 @@ try {
       <p class="summary">You opened results without taking the quiz. Bold and suspicious.</p>
     </section>
 
-    <RouterLink class="primary-button" to="/quiz">Retry</RouterLink>
+    <div class="actions">
+      <button type="button" class="primary-button share-button" :disabled="!result" @click="onShare">
+        Share
+      </button>
+      <RouterLink class="secondary-link retry-link" to="/quiz">Retry</RouterLink>
+    </div>
+
+    <p v-if="shareFeedback" class="feedback">{{ shareFeedback }}</p>
     <RouterLink class="secondary-link" to="/">Go home</RouterLink>
   </main>
 </template>
@@ -97,6 +256,24 @@ h1 {
   letter-spacing: -0.01em;
 }
 
+.rarity {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.rarity-common {
+  color: #4b5a76;
+}
+
+.rarity-rare {
+  color: #4d3bb6;
+}
+
+.rarity-legendary {
+  color: #c14d05;
+}
+
 .score {
   margin: 0;
   font-size: 1rem;
@@ -107,6 +284,39 @@ h1 {
 .summary {
   margin: 0;
   color: #4d5a76;
+}
+
+.compare-box {
+  border-radius: 12px;
+  border: 1px solid #ffd8c5;
+  background: #fff9f6;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.compare-line {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #394867;
+  font-weight: 700;
+}
+
+.compare-feedback {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: #8a3406;
+  font-weight: 700;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.share-button {
+  margin-top: 0;
 }
 
 .secondary-link {
@@ -121,5 +331,19 @@ h1 {
   border-radius: 12px;
   border: 1px solid #d7dfef;
   background: #f7f9fd;
+}
+
+.retry-link {
+  min-height: 56px;
+  font-weight: 700;
+  color: #233350;
+}
+
+.feedback {
+  margin: 0;
+  text-align: center;
+  font-size: 0.88rem;
+  color: #8e3809;
+  font-weight: 700;
 }
 </style>

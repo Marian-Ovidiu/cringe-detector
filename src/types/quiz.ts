@@ -1,4 +1,5 @@
 export type TagWeights = Record<string, number>
+export type Rarity = 'common' | 'rare' | 'legendary'
 
 export interface Answer {
   id: string
@@ -17,6 +18,7 @@ export interface Meme {
   title: string
   imageUrl: string
   roast: string
+  rarity: Rarity
   tagAffinities: TagWeights
 }
 
@@ -24,4 +26,9 @@ export interface Result {
   meme: Meme
   score: number
   matchedTags: string[]
+}
+
+export interface CompareResult {
+  meme: string
+  percentage: number
 }

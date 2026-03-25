@@ -1,8 +1,10 @@
 import type { Answer } from '../types/quiz'
+import type { CompareResult } from '../types/quiz'
 import type { MatchOutput } from '../engine/matcher'
 
 const ANSWERS_KEY = 'cringe-detector-answers'
 const RESULT_KEY = 'cringe-detector-result'
+const FRIEND_RESULT_KEY = 'cringe-detector-friend-result'
 
 function readJson<T>(key: string): T | null {
   try {
@@ -35,6 +37,7 @@ function isMatchOutput(payload: unknown): payload is MatchOutput {
   }
 
   const candidate = payload as MatchOutput
+  const rarity = candidate.meme?.rarity
   return (
     typeof candidate.percentage === 'number' &&
     Number.isFinite(candidate.percentage) &&
@@ -43,7 +46,23 @@ function isMatchOutput(payload: unknown): payload is MatchOutput {
     !!candidate.meme &&
     typeof candidate.meme.title === 'string' &&
     typeof candidate.meme.imageUrl === 'string' &&
-    typeof candidate.meme.roast === 'string'
+    typeof candidate.meme.roast === 'string' &&
+    (rarity === 'common' || rarity === 'rare' || rarity === 'legendary')
+  )
+}
+
+function isCompareResult(payload: unknown): payload is CompareResult {
+  if (!payload || typeof payload !== 'object') {
+    return false
+  }
+
+  const candidate = payload as CompareResult
+  return (
+    typeof candidate.meme === 'string' &&
+    typeof candidate.percentage === 'number' &&
+    Number.isFinite(candidate.percentage) &&
+    candidate.percentage >= 0 &&
+    candidate.percentage <= 100
   )
 }
 
@@ -78,6 +97,19 @@ export function useQuizSession() {
     sessionStorage.removeItem(RESULT_KEY)
   }
 
+  function loadFriendResult(): CompareResult | null {
+    const payload = readJson<unknown>(FRIEND_RESULT_KEY)
+    return isCompareResult(payload) ? payload : null
+  }
+
+  function saveFriendResult(friendResult: CompareResult): void {
+    sessionStorage.setItem(FRIEND_RESULT_KEY, JSON.stringify(friendResult))
+  }
+
+  function clearFriendResult(): void {
+    sessionStorage.removeItem(FRIEND_RESULT_KEY)
+  }
+
   return {
     loadAnswers,
     saveAnswers,
@@ -85,5 +117,8 @@ export function useQuizSession() {
     loadResult,
     saveResult,
     clearResult,
+    loadFriendResult,
+    saveFriendResult,
+    clearFriendResult,
   }
 }

@@ -6,6 +6,11 @@ export interface MatchOutput {
   percentage: number
 }
 
+interface ScoredMeme {
+  meme: Meme
+  score: number
+}
+
 export function sumAnswerTags(selectedAnswers: Answer[]): TagWeights {
   const totals: TagWeights = {}
 
@@ -43,28 +48,47 @@ function getMatchPercentage(score: number, answerTags: TagWeights): number {
 export function matchBestMeme(
   selectedAnswers: Answer[],
   memePool: Meme[] = defaultMemes,
+  randomFn: () => number = Math.random,
 ): MatchOutput {
   if (memePool.length === 0) {
     throw new Error('Cannot match meme: meme pool is empty.')
   }
 
   const answerTags = sumAnswerTags(selectedAnswers)
-  let bestMeme = memePool[0]
-  let bestScore = getMemeScore(answerTags, bestMeme)
+  const scoredMemes: ScoredMeme[] = memePool.map((meme) => ({
+    meme,
+    score: getMemeScore(answerTags, meme),
+  }))
 
-  for (let i = 1; i < memePool.length; i += 1) {
-    const candidate = memePool[i]
-    const candidateScore = getMemeScore(answerTags, candidate)
+  scoredMemes.sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score
+    }
 
-    // Deterministic tie-breaker: keep the first meme in dataset order.
-    if (candidateScore > bestScore) {
-      bestMeme = candidate
-      bestScore = candidateScore
+    // Deterministic tie-breaker: keep dataset order.
+    return memePool.indexOf(left.meme) - memePool.indexOf(right.meme)
+  })
+
+  const topMatches = scoredMemes.slice(0, 3)
+  const bestMatch = topMatches[0]
+
+  const roll = randomFn()
+  let selected = bestMatch
+
+  if (roll < 0.05) {
+    const legendaryPick = topMatches.find((item) => item.meme.rarity === 'legendary')
+    if (legendaryPick) {
+      selected = legendaryPick
+    }
+  } else if (roll < 0.30) {
+    const rarePick = topMatches.find((item) => item.meme.rarity === 'rare')
+    if (rarePick) {
+      selected = rarePick
     }
   }
 
   return {
-    meme: bestMeme,
-    percentage: getMatchPercentage(bestScore, answerTags),
+    meme: selected.meme,
+    percentage: getMatchPercentage(selected.score, answerTags),
   }
 }

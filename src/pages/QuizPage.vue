@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { questions } from '../data/questions'
 import { matchBestMeme } from '../engine/matcher'
 import type { Answer } from '../types/quiz'
+import type { CompareResult } from '../types/quiz'
 import { useQuizSession } from '../composables/useQuizSession'
 
 const router = useRouter()
+const route = useRoute()
 const quizSession = useQuizSession()
 const totalQuestions = questions.length
 
 const restoredAnswers = quizSession.loadAnswers()
 const safeAnswers = restoredAnswers.length >= totalQuestions ? [] : restoredAnswers
+const friendResult = ref<CompareResult | null>(quizSession.loadFriendResult())
 
 const currentIndex = ref(safeAnswers.length)
 const selectedAnswers = ref<Answer[]>(safeAnswers)
@@ -26,6 +29,33 @@ const progressWidth = computed(() => {
 
   return `${(Math.min(currentIndex.value + 1, totalQuestions) / totalQuestions) * 100}%`
 })
+
+function parseFriendRef(rawRef: unknown): CompareResult | null {
+  if (typeof rawRef !== 'string') {
+    return null
+  }
+
+  const [meme, score] = rawRef.split(':')
+  if (!meme || !score) {
+    return null
+  }
+
+  const percentage = Number(score)
+  if (!Number.isFinite(percentage)) {
+    return null
+  }
+
+  return {
+    meme: meme.trim(),
+    percentage: Math.max(0, Math.min(100, Math.round(percentage))),
+  }
+}
+
+const sharedRef = parseFriendRef(route.query.ref)
+if (sharedRef) {
+  friendResult.value = sharedRef
+  quizSession.saveFriendResult(sharedRef)
+}
 
 function onAnswerTap(answer: Answer): void {
   if (!currentQuestion.value || isDone.value) {
@@ -58,6 +88,10 @@ function onAnswerTap(answer: Answer): void {
     <div class="progress-track" role="progressbar" :aria-valuenow="currentIndex + 1" :aria-valuemin="1" :aria-valuemax="totalQuestions">
       <div class="progress-fill" :style="{ width: progressWidth }"></div>
     </div>
+
+    <section v-if="friendResult" class="friend-banner">
+      Your friend got {{ friendResult.percentage }}% cringe. Beat that.
+    </section>
 
     <section v-if="currentQuestion" class="card">
       <h1>{{ currentQuestion.prompt }}</h1>
@@ -127,6 +161,16 @@ function onAnswerTap(answer: Answer): void {
   display: grid;
   gap: 8px;
   margin-top: 2px;
+}
+
+.friend-banner {
+  border-radius: 12px;
+  border: 1px solid #d7dfef;
+  background: #f7f9fe;
+  color: #394867;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 h1 {
