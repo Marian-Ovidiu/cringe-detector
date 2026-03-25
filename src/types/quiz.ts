@@ -17,6 +17,7 @@ export interface Meme {
   id: string
   title: string
   imageUrl: string
+  imgflipTemplateId?: string
   roast: string
   rarity: Rarity
   tagAffinities: TagWeights

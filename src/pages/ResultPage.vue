@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { MatchOutput } from '../engine/matcher'
 import { matchBestMeme } from '../engine/matcher'
@@ -8,11 +8,13 @@ import { questions } from '../data/questions'
 import { memes } from '../data/memes'
 import type { CompareResult } from '../types/quiz'
 import { uiCopy } from '../data/copy'
+import { fetchImgflipTemplates } from '../services/imgflip'
 
 const result = ref<MatchOutput | null>(null)
 const imageFailed = ref(false)
 const shareFeedback = ref('')
 const friendResult = ref<CompareResult | null>(null)
+const imgflipTemplateUrls = ref<Record<string, string>>({})
 const quizSession = useQuizSession()
 const route = useRoute()
 const router = useRouter()
@@ -68,6 +70,19 @@ Sono: ${result.value.meme.title}
 Provalo: ${shareUrl.value}`
 })
 
+const displayImageUrl = computed(() => {
+  if (!result.value) {
+    return ''
+  }
+
+  const templateId = result.value.meme.imgflipTemplateId
+  if (templateId && imgflipTemplateUrls.value[templateId]) {
+    return imgflipTemplateUrls.value[templateId]
+  }
+
+  return result.value.meme.imageUrl
+})
+
 const rarityLabel = computed(() => {
   if (!result.value) {
     return ''
@@ -110,6 +125,30 @@ function setShareFeedback(value: string): void {
   window.setTimeout(() => {
     shareFeedback.value = ''
   }, 1800)
+}
+
+async function loadImgflipTemplateUrls(): Promise<void> {
+  const templates = await fetchImgflipTemplates()
+  if (templates.length === 0) {
+    return
+  }
+
+  const templatesById = Object.fromEntries(templates.map((template) => [template.id, template.url]))
+  const resolvedUrls: Record<string, string> = {}
+
+  for (const meme of memes) {
+    const templateId = meme.imgflipTemplateId
+    if (!templateId) {
+      continue
+    }
+
+    const templateUrl = templatesById[templateId]
+    if (templateUrl) {
+      resolvedUrls[templateId] = templateUrl
+    }
+  }
+
+  imgflipTemplateUrls.value = resolvedUrls
 }
 
 async function onShare(): Promise<void> {
@@ -174,6 +213,12 @@ try {
 } catch {
   result.value = null
 }
+
+watch(displayImageUrl, () => {
+  imageFailed.value = false
+})
+
+void loadImgflipTemplateUrls()
 </script>
 
 <template>
@@ -184,7 +229,7 @@ try {
     <section v-if="result" class="result-card">
       <img
         v-if="!imageFailed"
-        :src="result.meme.imageUrl"
+        :src="displayImageUrl"
         :alt="result.meme.title"
         class="meme-image"
         @error="imageFailed = true"
