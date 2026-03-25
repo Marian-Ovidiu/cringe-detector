@@ -3,47 +3,47 @@ import type { Question } from '../types/quiz'
 export const questions: Question[] = [
   {
     id: 'q1',
-    prompt: 'Morning alarm. You:',
+    prompt: 'Quando qualcuno ti risponde solo "ok"',
     answers: [
-      { id: 'q1a1', text: 'Snooze 4 times', tagWeights: { lazy: 1, doomscroll: 0.6, cringe: 0.4 } },
-      { id: 'q1a2', text: 'Cold shower speech', tagWeights: { alpha: 1, performative: 0.7, cringe: 0.5 } },
-      { id: 'q1a3', text: 'Post a quote first', tagWeights: { corporate: 0.8, performative: 1, cringe: 0.8 } },
+      { id: 'q1a1', text: 'mi odia.', tagWeights: { dramatic: 0.9, delulu: 0.8, cringe: 0.6 } },
+      { id: 'q1a2', text: 'ok pure io.', tagWeights: { dry: 1, soft: 0.3, cringe: 0.2 } },
+      { id: 'q1a3', text: 'spammo altri 3 messaggi', tagWeights: { loud: 0.8, performative: 0.7, cringe: 0.7 } },
     ],
   },
   {
     id: 'q2',
-    prompt: 'In group chat you are:',
+    prompt: 'Sei a una festa',
     answers: [
-      { id: 'q2a1', text: 'Silent lurker', tagWeights: { soft: 0.6, dry: 0.5, lazy: 0.4 } },
-      { id: 'q2a2', text: 'Capslock striker', tagWeights: { loud: 1, chaos: 0.6, cringe: 0.7 } },
-      { id: 'q2a3', text: 'Debate starter', tagWeights: { hottake: 1, troll: 0.7, cringe: 0.5 } },
+      { id: 'q2a1', text: 'parlo troppo', tagWeights: { loud: 0.9, chaos: 0.4, cringe: 0.6 } },
+      { id: 'q2a2', text: 'sto nel mio angolo', tagWeights: { soft: 0.8, lazy: 0.4, cringe: 0.3 } },
+      { id: 'q2a3', text: 'fingo di stare al telefono', tagWeights: { dry: 0.6, delulu: 0.4, cringe: 0.5 } },
     ],
   },
   {
     id: 'q3',
-    prompt: 'Your selfie caption:',
+    prompt: 'Il tuo humor e',
     answers: [
-      { id: 'q3a1', text: '"No filter" (3 filters)', tagWeights: { delulu: 0.9, performative: 0.6, cringe: 0.8 } },
-      { id: 'q3a2', text: '"Built different"', tagWeights: { alpha: 0.9, dramatic: 0.4, cringe: 0.6 } },
-      { id: 'q3a3', text: 'Just an emoji', tagWeights: { polished: 0.7, dry: 0.6, soft: 0.4 } },
+      { id: 'q3a1', text: 'brainrot puro', tagWeights: { chaos: 1, troll: 0.7, cringe: 0.8 } },
+      { id: 'q3a2', text: 'ironico (credo)', tagWeights: { dry: 0.9, polished: 0.4, cringe: 0.4 } },
+      { id: 'q3a3', text: 'non lo so bro', tagWeights: { soft: 0.5, delulu: 0.6, cringe: 0.5 } },
     ],
   },
   {
     id: 'q4',
-    prompt: 'Weekend plan:',
+    prompt: 'Quando fai una figuraccia',
     answers: [
-      { id: 'q4a1', text: 'Touch grass maybe', tagWeights: { lazy: 0.7, soft: 0.5, cringe: 0.3 } },
-      { id: 'q4a2', text: 'Cause online drama', tagWeights: { chaos: 1, troll: 0.8, loud: 0.6 } },
-      { id: 'q4a3', text: 'Optimize my brand', tagWeights: { corporate: 1, polished: 0.8, cringe: 0.7 } },
+      { id: 'q4a1', text: 'ci rido sopra', tagWeights: { soft: 0.6, dry: 0.6, cringe: 0.2 } },
+      { id: 'q4a2', text: 'ci penso per 3 anni', tagWeights: { dramatic: 1, delulu: 0.5, cringe: 0.7 } },
+      { id: 'q4a3', text: 'faccio peggio', tagWeights: { chaos: 0.9, impulsive: 0.8, cringe: 0.8 } },
     ],
   },
   {
     id: 'q5',
-    prompt: 'When roasted, you:',
+    prompt: 'Online sei',
     answers: [
-      { id: 'q5a1', text: 'Laugh then spiral', tagWeights: { soft: 0.7, dramatic: 0.8, delulu: 0.5 } },
-      { id: 'q5a2', text: 'Drop a thread', tagWeights: { hottake: 0.9, performative: 0.8, cringe: 0.6 } },
-      { id: 'q5a3', text: 'Reply "ok buddy"', tagWeights: { dry: 1, troll: 0.6, cringe: 0.2 } },
+      { id: 'q5a1', text: 'sempre presente', tagWeights: { performative: 0.9, corporate: 0.5, cringe: 0.7 } },
+      { id: 'q5a2', text: 'lurker silenzioso', tagWeights: { soft: 0.8, polished: 0.5, lazy: 0.5 } },
+      { id: 'q5a3', text: 'commento tutto', tagWeights: { hottake: 0.9, troll: 0.8, cringe: 0.7 } },
     ],
   },
 ]

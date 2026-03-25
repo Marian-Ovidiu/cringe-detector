@@ -7,6 +7,7 @@ import { useQuizSession } from '../composables/useQuizSession'
 import { questions } from '../data/questions'
 import { memes } from '../data/memes'
 import type { CompareResult } from '../types/quiz'
+import { uiCopy } from '../data/copy'
 
 const result = ref<MatchOutput | null>(null)
 const imageFailed = ref(false)
@@ -61,10 +62,10 @@ const shareText = computed(() => {
     return ''
   }
 
-  return `I got ${result.value.percentage}% cringe 💀
-You are: ${result.value.meme.title}
+  return `Ho fatto ${result.value.percentage}% cringe \uD83D\uDC80
+Sono: ${result.value.meme.title}
 
-Try it: ${shareUrl.value}`
+Provalo: ${shareUrl.value}`
 })
 
 const rarityLabel = computed(() => {
@@ -73,14 +74,14 @@ const rarityLabel = computed(() => {
   }
 
   if (result.value.meme.rarity === 'legendary') {
-    return 'Legendary 🔥'
+    return uiCopy.result.rarity.legendary
   }
 
   if (result.value.meme.rarity === 'rare') {
-    return 'Rare ⚡'
+    return uiCopy.result.rarity.rare
   }
 
-  return 'Common'
+  return uiCopy.result.rarity.common
 })
 
 const compareFeedback = computed(() => {
@@ -89,15 +90,19 @@ const compareFeedback = computed(() => {
   }
 
   const diff = result.value.percentage - friendResult.value.percentage
+  if (Math.abs(diff) <= 4) {
+    return uiCopy.result.compare.draw
+  }
+
+  if (Math.abs(diff) <= 11) {
+    return uiCopy.result.compare.commentClose
+  }
+
   if (diff >= 12) {
-    return 'You are more cringe. Dominant performance 💀'
+    return `${uiCopy.result.compare.win} - ${uiCopy.result.compare.commentBetter}`
   }
 
-  if (diff <= -12) {
-    return 'You got destroyed. Train harder 💀'
-  }
-
-  return 'Close match. Both concerning.'
+  return `${uiCopy.result.compare.lose} - ${uiCopy.result.compare.commentWorse}`
 })
 
 function setShareFeedback(value: string): void {
@@ -119,18 +124,18 @@ async function onShare(): Promise<void> {
         text: shareText.value,
         url: shareUrl.value,
       })
-      setShareFeedback('shared 💀')
+      setShareFeedback(uiCopy.result.toastSuccess)
       return
     }
 
     await navigator.clipboard.writeText(shareText.value)
-    setShareFeedback('copied 💀')
+    setShareFeedback(uiCopy.result.shareFallback)
   } catch (error) {
     const maybeError = error as Error
     if (maybeError.name === 'AbortError') {
       return
     }
-    setShareFeedback('share failed')
+    setShareFeedback(uiCopy.result.errorGeneric)
   }
 }
 
@@ -173,7 +178,8 @@ try {
 
 <template>
   <main class="screen">
-    <p class="result-label">Your certified cringe form</p>
+    <p class="result-label">{{ uiCopy.result.title }}</p>
+    <p class="result-subtitle">{{ uiCopy.result.subtitle }}</p>
 
     <section v-if="result" class="result-card">
       <img
@@ -183,34 +189,39 @@ try {
         class="meme-image"
         @error="imageFailed = true"
       />
-      <div v-else class="meme-image fallback">Meme loading like your self-awareness.</div>
+      <div v-else class="meme-image fallback">{{ uiCopy.result.noImage }}</div>
 
+      <p class="you-are">{{ uiCopy.result.youAre }}</p>
       <h1>{{ result.meme.title }}</h1>
-      <p class="rarity" :class="`rarity-${result.meme.rarity}`">{{ rarityLabel }}</p>
-      <p class="score">{{ result.percentage }}% cringe match</p>
+      <p class="score">{{ result.percentage }}% {{ uiCopy.result.scoreSuffix }}</p>
+      <p class="level-label">
+        {{ uiCopy.result.levelLabel }}
+        <span class="rarity" :class="`rarity-${result.meme.rarity}`">{{ rarityLabel }}</span>
+      </p>
       <p class="summary">{{ result.meme.roast }}</p>
 
       <section v-if="friendResult" class="compare-box">
-        <p class="compare-line">YOU: {{ result.percentage }}% cringe</p>
-        <p class="compare-line">FRIEND: {{ friendResult.percentage }}% cringe</p>
+        <p class="compare-title">{{ uiCopy.result.compare.title }}</p>
+        <p class="compare-line">{{ uiCopy.result.compare.you(result.percentage) }}</p>
+        <p class="compare-line">{{ uiCopy.result.compare.friend(friendResult.percentage) }}</p>
         <p class="compare-feedback">{{ compareFeedback }}</p>
       </section>
     </section>
 
     <section v-else class="result-card">
-      <h1>No roast yet.</h1>
-      <p class="summary">You opened results without taking the quiz. Bold and suspicious.</p>
+      <h1>{{ uiCopy.result.emptyTitle }}</h1>
+      <p class="summary">{{ uiCopy.result.emptyDescription }}</p>
     </section>
 
     <div class="actions">
       <button type="button" class="primary-button share-button" :disabled="!result" @click="onShare">
-        Share
+        {{ uiCopy.result.share }}
       </button>
-      <RouterLink class="secondary-link retry-link" to="/quiz">Retry</RouterLink>
+      <RouterLink class="secondary-link retry-link" to="/quiz">{{ uiCopy.result.retry }}</RouterLink>
     </div>
 
     <p v-if="shareFeedback" class="feedback">{{ shareFeedback }}</p>
-    <RouterLink class="secondary-link" to="/">Go home</RouterLink>
+    <RouterLink class="secondary-link" to="/">{{ uiCopy.result.home }}</RouterLink>
   </main>
 </template>
 
@@ -222,6 +233,13 @@ try {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #7d2f05;
+}
+
+.result-subtitle {
+  margin: -8px 0 0;
+  color: #5a6783;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .result-card {
@@ -254,6 +272,20 @@ h1 {
   font-size: 1.58rem;
   line-height: 1.2;
   letter-spacing: -0.01em;
+}
+
+.you-are {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #5a6783;
+  font-weight: 700;
+}
+
+.level-label {
+  margin: 0;
+  font-size: 0.93rem;
+  color: #5a6783;
+  font-weight: 700;
 }
 
 .rarity {
@@ -300,6 +332,15 @@ h1 {
   font-size: 0.92rem;
   color: #394867;
   font-weight: 700;
+}
+
+.compare-title {
+  margin: 0 0 2px;
+  font-size: 0.86rem;
+  color: #8a3406;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 800;
 }
 
 .compare-feedback {

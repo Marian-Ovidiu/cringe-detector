@@ -6,6 +6,7 @@ import { matchBestMeme } from '../engine/matcher'
 import type { Answer } from '../types/quiz'
 import type { CompareResult } from '../types/quiz'
 import { useQuizSession } from '../composables/useQuizSession'
+import { uiCopy } from '../data/copy'
 
 const router = useRouter()
 const route = useRoute()
@@ -21,7 +22,7 @@ const selectedAnswers = ref<Answer[]>(safeAnswers)
 const isDone = ref(false)
 
 const currentQuestion = computed(() => questions[currentIndex.value] ?? null)
-const progressText = computed(() => `${Math.min(currentIndex.value + 1, totalQuestions)}/${totalQuestions}`)
+const progressText = computed(() => uiCopy.quiz.progress(Math.min(currentIndex.value + 1, totalQuestions), totalQuestions))
 const progressWidth = computed(() => {
   if (totalQuestions === 0) {
     return '0%'
@@ -81,7 +82,7 @@ function onAnswerTap(answer: Answer): void {
 <template>
   <main class="screen">
     <header class="top-row">
-      <RouterLink class="text-link" to="/">Back</RouterLink>
+      <RouterLink class="text-link" to="/">{{ uiCopy.quiz.back }}</RouterLink>
       <span class="chip">{{ progressText }}</span>
     </header>
 
@@ -90,12 +91,12 @@ function onAnswerTap(answer: Answer): void {
     </div>
 
     <section v-if="friendResult" class="friend-banner">
-      Your friend got {{ friendResult.percentage }}% cringe. Beat that.
+      {{ uiCopy.quiz.friendBanner(friendResult.percentage) }}
     </section>
 
     <section v-if="currentQuestion" class="card">
       <h1>{{ currentQuestion.prompt }}</h1>
-      <p>Pick fast. Your taste gets judged anyway.</p>
+      <p>{{ uiCopy.quiz.helper }}</p>
     </section>
 
     <section v-if="currentQuestion" class="answers">
@@ -111,9 +112,9 @@ function onAnswerTap(answer: Answer): void {
     </section>
 
     <section v-else class="card">
-      <h1>No questions found.</h1>
-      <p>Even your quiz disappeared. Go home and restart.</p>
-      <RouterLink class="primary-button" to="/">Go home</RouterLink>
+      <h1>{{ uiCopy.quiz.emptyTitle }}</h1>
+      <p>{{ uiCopy.quiz.emptyDescription }}</p>
+      <RouterLink class="primary-button" to="/">{{ uiCopy.quiz.emptyCta }}</RouterLink>
     </section>
   </main>
 </template>

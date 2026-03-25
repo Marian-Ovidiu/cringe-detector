@@ -1,9 +1,15 @@
+<script setup lang="ts">
+import { uiCopy } from '../data/copy'
+</script>
+
 <template>
   <main class="screen home-page">
-    <p class="eyebrow">Roast speedrun</p>
-    <h1>Cringe Detector</h1>
-    <p class="subtitle">15 seconds and we expose your online aura.</p>
-    <RouterLink class="cta-button" to="/quiz">Scan me</RouterLink>
+    <p class="eyebrow">{{ uiCopy.home.eyebrow }}</p>
+    <h1>{{ uiCopy.home.title }}</h1>
+    <p class="subtitle">{{ uiCopy.home.subtitle }}</p>
+    <p class="secondary">{{ uiCopy.home.secondary }}</p>
+    <RouterLink class="cta-button" to="/quiz">{{ uiCopy.home.cta }}</RouterLink>
+    <p class="footer">{{ uiCopy.home.footer }}</p>
   </main>
 </template>
 
@@ -39,6 +45,12 @@ h1 {
   max-width: 27ch;
 }
 
+.secondary {
+  margin: 0;
+  color: #6a7590;
+  font-size: 0.93rem;
+}
+
 .cta-button {
   margin-top: 14px;
   display: inline-flex;
@@ -62,5 +74,11 @@ h1 {
 .cta-button:focus-visible {
   outline: 2px solid #111d38;
   outline-offset: 2px;
+}
+
+.footer {
+  margin: 6px 0 0;
+  color: #8b93a8;
+  font-size: 0.8rem;
 }
 </style>
