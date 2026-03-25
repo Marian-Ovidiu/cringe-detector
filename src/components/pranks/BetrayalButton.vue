@@ -200,7 +200,7 @@ function onHover(): void {
   }
 }
 
-function onPress(event: Event, navigate?: () => void): void {
+function onPress(event: Event, navigate?: (event?: MouseEvent) => void): void {
   if (props.disabled) {
     event.preventDefault()
     return
@@ -214,7 +214,7 @@ function onPress(event: Event, navigate?: () => void): void {
   if (settleIfNeeded()) {
     rearmCycle()
     if (navigate) {
-      navigate()
+      navigate(event as MouseEvent)
       emit('action')
       return
     }
@@ -229,7 +229,7 @@ function onPress(event: Event, navigate?: () => void): void {
     emit('combo', combo)
 
     if (navigate) {
-      navigate()
+      navigate(event as MouseEvent)
       emit('action')
       return
     }
@@ -251,7 +251,7 @@ function onPress(event: Event, navigate?: () => void): void {
 
   state.value = 'suspicious'
   if (navigate) {
-    navigate()
+    navigate(event as MouseEvent)
     emit('action')
     return
   }
