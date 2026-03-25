@@ -12,14 +12,15 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 h1 {
   margin: 0;
-  font-size: 2.2rem;
+  font-size: 2.4rem;
   line-height: 1.05;
   letter-spacing: -0.03em;
+  max-width: 12ch;
 }
 
 .eyebrow {
@@ -34,16 +35,16 @@ h1 {
 .subtitle {
   margin: 0;
   color: #495674;
-  font-size: 1rem;
-  max-width: 28ch;
+  font-size: 1.02rem;
+  max-width: 27ch;
 }
 
 .cta-button {
-  margin-top: 10px;
+  margin-top: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 56px;
+  min-height: 58px;
   width: 100%;
   border-radius: 14px;
   text-decoration: none;
@@ -56,5 +57,10 @@ h1 {
 
 .cta-button:active {
   transform: translateY(1px);
+}
+
+.cta-button:focus-visible {
+  outline: 2px solid #111d38;
+  outline-offset: 2px;
 }
 </style>

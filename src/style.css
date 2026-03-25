@@ -1,8 +1,16 @@
 :root {
+  --bg-shell: #f5f7fd;
+  --bg-card: #ffffff;
+  --ink-strong: #121c33;
+  --ink-soft: #50607e;
+  --line-soft: #d8e0f0;
+  --brand: #101c36;
+  --brand-warm: #ff6d2f;
+
   font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #172033;
+  color: var(--ink-strong);
   background: radial-gradient(circle at top, #fff3e9 0%, #f4f6fb 55%);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,29 +26,30 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: var(--bg-shell);
 }
 
 #app {
   width: 100%;
-  max-width: 520px;
+  max-width: 540px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 14px;
 }
 
 .screen {
-  min-height: calc(100vh - 32px);
+  min-height: calc(100vh - 28px);
   border-radius: 20px;
-  background: #ffffff;
-  box-shadow: 0 8px 26px rgba(26, 38, 59, 0.09);
-  padding: 20px 16px;
+  background: var(--bg-card);
+  box-shadow: 0 10px 28px rgba(26, 38, 59, 0.1);
+  padding: 20px 18px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .primary-button {
   margin-top: auto;
-  min-height: 54px;
+  min-height: 56px;
   width: 100%;
   display: inline-flex;
   align-items: center;
@@ -51,5 +60,27 @@ body {
   font-size: 1rem;
   font-weight: 700;
   color: #ffffff;
-  background: #111d38;
+  background: var(--brand);
+  letter-spacing: 0.01em;
+}
+
+.primary-button:active {
+  transform: translateY(1px);
+}
+
+.primary-button:focus-visible {
+  outline: 2px solid var(--brand-warm);
+  outline-offset: 2px;
+}
+
+@media (max-width: 380px) {
+  #app {
+    padding: 10px;
+  }
+
+  .screen {
+    min-height: calc(100vh - 20px);
+    padding: 16px 14px;
+    gap: 14px;
+  }
 }

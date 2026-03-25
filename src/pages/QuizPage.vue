@@ -4,17 +4,19 @@ import { useRouter } from 'vue-router'
 import { questions } from '../data/questions'
 import { matchBestMeme } from '../engine/matcher'
 import type { Answer } from '../types/quiz'
-
-const RESULT_STORAGE_KEY = 'cringe-detector-result'
+import { useQuizSession } from '../composables/useQuizSession'
 
 const router = useRouter()
-const currentIndex = ref(0)
-const selectedAnswers = ref<Answer[]>([])
+const quizSession = useQuizSession()
+const totalQuestions = questions.length
+
+const restoredAnswers = quizSession.loadAnswers()
+const safeAnswers = restoredAnswers.length >= totalQuestions ? [] : restoredAnswers
+
+const currentIndex = ref(safeAnswers.length)
+const selectedAnswers = ref<Answer[]>(safeAnswers)
 const isDone = ref(false)
 
-sessionStorage.removeItem(RESULT_STORAGE_KEY)
-
-const totalQuestions = questions.length
 const currentQuestion = computed(() => questions[currentIndex.value] ?? null)
 const progressText = computed(() => `${Math.min(currentIndex.value + 1, totalQuestions)}/${totalQuestions}`)
 const progressWidth = computed(() => {
@@ -31,6 +33,8 @@ function onAnswerTap(answer: Answer): void {
   }
 
   selectedAnswers.value.push(answer)
+  quizSession.saveAnswers(selectedAnswers.value)
+  quizSession.clearResult()
 
   if (currentIndex.value < totalQuestions - 1) {
     currentIndex.value += 1
@@ -39,7 +43,7 @@ function onAnswerTap(answer: Answer): void {
 
   isDone.value = true
   const result = matchBestMeme(selectedAnswers.value)
-  sessionStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(result))
+  quizSession.saveResult(result)
   router.push('/result')
 }
 </script>
@@ -91,13 +95,16 @@ function onAnswerTap(answer: Answer): void {
   color: #32415f;
   text-decoration: none;
   font-weight: 600;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .chip {
   border-radius: 999px;
   background: #e9eef9;
   color: #3f4d69;
-  padding: 6px 10px;
+  padding: 7px 11px;
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -118,13 +125,15 @@ function onAnswerTap(answer: Answer): void {
 
 .card {
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.48rem;
   line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 p {
@@ -134,21 +143,28 @@ p {
 
 .answers {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .answer {
   width: 100%;
-  min-height: 52px;
+  min-height: 56px;
   border: 1px solid #d7dfef;
   border-radius: 12px;
   background: #fff;
   color: #1f2b44;
   font-size: 0.98rem;
   font-weight: 600;
+  text-align: left;
+  padding: 0 14px;
 }
 
 .answer:active {
   background: #f3f6fc;
+}
+
+.answer:focus-visible {
+  outline: 2px solid #ff6d2f;
+  outline-offset: 2px;
 }
 </style>

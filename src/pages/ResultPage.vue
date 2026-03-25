@@ -1,32 +1,25 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { MatchOutput } from '../engine/matcher'
-
-const RESULT_STORAGE_KEY = 'cringe-detector-result'
+import { matchBestMeme } from '../engine/matcher'
+import { useQuizSession } from '../composables/useQuizSession'
+import { questions } from '../data/questions'
 
 const result = ref<MatchOutput | null>(null)
 const imageFailed = ref(false)
-
-function isValidResult(payload: unknown): payload is MatchOutput {
-  if (!payload || typeof payload !== 'object') {
-    return false
-  }
-
-  const maybeResult = payload as MatchOutput
-  return (
-    typeof maybeResult.percentage === 'number' &&
-    !!maybeResult.meme &&
-    typeof maybeResult.meme.title === 'string' &&
-    typeof maybeResult.meme.imageUrl === 'string' &&
-    typeof maybeResult.meme.roast === 'string'
-  )
-}
+const quizSession = useQuizSession()
 
 try {
-  const savedResult = sessionStorage.getItem(RESULT_STORAGE_KEY)
+  const savedResult = quizSession.loadResult()
   if (savedResult) {
-    const parsed = JSON.parse(savedResult)
-    result.value = isValidResult(parsed) ? parsed : null
+    result.value = savedResult
+  } else {
+    const savedAnswers = quizSession.loadAnswers()
+    if (savedAnswers.length === questions.length) {
+      const recovered = matchBestMeme(savedAnswers)
+      quizSession.saveResult(recovered)
+      result.value = recovered
+    }
   }
 } catch {
   result.value = null
@@ -74,16 +67,16 @@ try {
 
 .result-card {
   border-radius: 16px;
-  padding: 18px;
+  padding: 18px 16px;
   background: linear-gradient(170deg, #fff6f1 0%, #ffffff 100%);
   border: 1px solid #ffd8c5;
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .meme-image {
   width: 100%;
-  height: 170px;
+  height: 180px;
   border-radius: 12px;
   object-fit: cover;
   background: #f6d8c8;
@@ -99,8 +92,9 @@ try {
 
 h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.58rem;
   line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .score {
@@ -120,5 +114,12 @@ h1 {
   text-decoration: none;
   color: #32415f;
   font-weight: 600;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid #d7dfef;
+  background: #f7f9fd;
 }
 </style>
