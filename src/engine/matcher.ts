@@ -36,7 +36,8 @@ function getMatchPercentage(score: number, answerTags: TagWeights): number {
     return 0
   }
 
-  return Math.round((score / maxScore) * 100)
+  const percentage = Math.round((score / maxScore) * 100)
+  return Math.max(0, Math.min(100, percentage))
 }
 
 export function matchBestMeme(

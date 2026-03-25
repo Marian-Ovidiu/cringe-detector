@@ -3,7 +3,7 @@
   line-height: 1.5;
   font-weight: 400;
   color: #172033;
-  background-color: #f4f6fb;
+  background: radial-gradient(circle at top, #fff3e9 0%, #f4f6fb 55%);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -25,4 +25,31 @@ body {
   max-width: 520px;
   margin: 0 auto;
   padding: 16px;
+}
+
+.screen {
+  min-height: calc(100vh - 32px);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 8px 26px rgba(26, 38, 59, 0.09);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.primary-button {
+  margin-top: auto;
+  min-height: 54px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 14px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #111d38;
 }

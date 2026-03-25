@@ -16,6 +16,7 @@ export interface Meme {
   id: string
   title: string
   imageUrl: string
+  roast: string
   tagAffinities: TagWeights
 }
 
