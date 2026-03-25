@@ -1,5 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { uiCopy } from '../data/copy'
+import BetrayalButton from '../components/pranks/BetrayalButton.vue'
+import { useMemoryMock } from '../composables/useMemoryMock'
+
+const memoryMock = useMemoryMock()
+const memoryLine = computed(() => memoryMock.getContextLine('home'))
+
+function onStartAttempt(): void {
+  memoryMock.trackCtaClick('start-quiz')
+  memoryMock.trackSpamClick('start-quiz')
+}
+
+function onStartAction(): void {
+  memoryMock.trackQuizStart()
+}
 </script>
 
 <template>
@@ -8,7 +23,15 @@ import { uiCopy } from '../data/copy'
     <h1>{{ uiCopy.home.title }}</h1>
     <p class="subtitle">{{ uiCopy.home.subtitle }}</p>
     <p class="secondary">{{ uiCopy.home.secondary }}</p>
-    <RouterLink class="cta-button" to="/quiz">{{ uiCopy.home.cta }}</RouterLink>
+    <BetrayalButton
+      class="cta-button"
+      prank-id="start-quiz"
+      :label="uiCopy.home.cta"
+      to="/quiz"
+      @attempt="onStartAttempt"
+      @action="onStartAction"
+    />
+    <p v-if="memoryLine" class="memory-mock">{{ memoryLine }}</p>
     <p class="footer">{{ uiCopy.home.footer }}</p>
   </main>
 </template>
@@ -80,5 +103,12 @@ h1 {
   margin: 6px 0 0;
   color: #8b93a8;
   font-size: 0.8rem;
+}
+
+.memory-mock {
+  margin: -2px 0 0;
+  color: #8e3909;
+  font-size: 0.83rem;
+  font-weight: 700;
 }
 </style>

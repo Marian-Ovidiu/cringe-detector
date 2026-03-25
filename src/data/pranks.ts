@@ -1,0 +1,62 @@
+import type { PrankConfig, PrankCategory } from '../types/prank'
+
+export const prankCategories: PrankCategory[] = ['visual', 'copy', 'interaction', 'sound', 'meta']
+
+export const prankConfigs: PrankConfig[] = [
+  {
+    id: 'button-jump',
+    category: 'interaction',
+    label: 'Button jumps away',
+    enabledByDefault: true,
+    allowedEvents: ['click', 'hover'],
+    minChaos: 20,
+    baseChance: 0.06,
+    chaosScale: 0.26,
+    cooldownMs: 6000,
+  },
+  {
+    id: 'fake-typo',
+    category: 'copy',
+    label: 'Tiny typo flash',
+    enabledByDefault: true,
+    allowedEvents: ['hover', 'answer'],
+    minChaos: 10,
+    baseChance: 0.08,
+    chaosScale: 0.2,
+    cooldownMs: 4000,
+  },
+  {
+    id: 'screen-wobble',
+    category: 'visual',
+    label: 'Short screen wobble',
+    enabledByDefault: true,
+    allowedEvents: ['answer'],
+    minChaos: 35,
+    baseChance: 0.05,
+    chaosScale: 0.24,
+    cooldownMs: 8000,
+  },
+  {
+    id: 'vine-boom-lite',
+    category: 'sound',
+    label: 'Tiny boom sound',
+    enabledByDefault: false,
+    allowedEvents: ['click', 'answer'],
+    minChaos: 45,
+    baseChance: 0.04,
+    chaosScale: 0.16,
+    cooldownMs: 10000,
+  },
+  {
+    id: 'reverse-score-hint',
+    category: 'meta',
+    label: 'Misleading score hint',
+    enabledByDefault: true,
+    allowedEvents: ['answer'],
+    minChaos: 55,
+    baseChance: 0.03,
+    chaosScale: 0.18,
+    cooldownMs: 14000,
+    maxTriggers: 2,
+  },
+]

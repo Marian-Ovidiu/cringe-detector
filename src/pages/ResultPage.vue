@@ -3,19 +3,34 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { MatchOutput } from '../engine/matcher'
 import { matchBestMeme } from '../engine/matcher'
+import type { ComboDecision } from '../composables/useComboMode'
 import { useQuizSession } from '../composables/useQuizSession'
+import { usePrankEngine } from '../composables/usePrankEngine'
+import { useFloatingMemeAttack } from '../composables/useFloatingMemeAttack'
+import { useRoastInterrupt } from '../composables/useRoastInterrupt'
+import { useMemoryMock } from '../composables/useMemoryMock'
 import { questions } from '../data/questions'
 import { memes } from '../data/memes'
 import type { CompareResult } from '../types/quiz'
 import { uiCopy } from '../data/copy'
+import { prankTuning } from '../data/prankTuning'
 import { fetchImgflipTemplates } from '../services/imgflip'
+import BetrayalButton from '../components/pranks/BetrayalButton.vue'
+import FloatingMemeOverlay from '../components/pranks/FloatingMemeOverlay.vue'
+import RoastInterruptLayer from '../components/pranks/RoastInterruptLayer.vue'
 
 const result = ref<MatchOutput | null>(null)
 const imageFailed = ref(false)
 const shareFeedback = ref('')
+const fakeButtonFeedback = ref('')
+const fakeButtonLabel = ref('fix me')
 const friendResult = ref<CompareResult | null>(null)
 const imgflipTemplateUrls = ref<Record<string, string>>({})
 const quizSession = useQuizSession()
+const prankEngine = usePrankEngine()
+const floatingAttack = useFloatingMemeAttack({ maxActive: prankTuning.floating.maxActiveByScreen.result })
+const roastInterrupt = useRoastInterrupt({ maxActive: prankTuning.roast.maxActive })
+const memoryMock = useMemoryMock()
 const route = useRoute()
 const router = useRouter()
 
@@ -119,6 +134,7 @@ const compareFeedback = computed(() => {
 
   return `${uiCopy.result.compare.lose} - ${uiCopy.result.compare.commentWorse}`
 })
+const memoryLine = computed(() => memoryMock.getContextLine('result'))
 
 function setShareFeedback(value: string): void {
   shareFeedback.value = value
@@ -156,6 +172,13 @@ async function onShare(): Promise<void> {
     return
   }
 
+  const triggered = prankEngine.registerClick({ targetId: 'share-result' })
+  memoryMock.trackShareAttempt()
+  roastInterrupt.registerInteraction()
+  roastInterrupt.handlePrankTrigger(triggered)
+  floatingAttack.registerActivity('spam_click')
+  floatingAttack.handlePrankTrigger(triggered)
+
   try {
     if (navigator.share) {
       await navigator.share({
@@ -176,6 +199,58 @@ async function onShare(): Promise<void> {
     }
     setShareFeedback(uiCopy.result.errorGeneric)
   }
+}
+
+function onFakeFixMe(): void {
+  const triggered = prankEngine.registerClick({ targetId: 'fake-fix-me' })
+  memoryMock.trackFakeButtonClick()
+  memoryMock.trackSpamClick('fake-fix-me')
+  roastInterrupt.registerInteraction()
+  roastInterrupt.handlePrankTrigger(triggered)
+  floatingAttack.registerActivity('spam_click')
+  floatingAttack.handlePrankTrigger(triggered)
+  floatingAttack.spawn('badge')
+  if (Math.random() < 0.55) {
+    floatingAttack.spawn('emoji')
+  }
+
+  const fakeLabels = ['Send foto piedi', 'fix me', 'skip', 'non cliccare', 'gratis?']
+  fakeButtonLabel.value = fakeLabels[Math.floor(Math.random() * fakeLabels.length)] ?? 'fix me'
+  fakeButtonFeedback.value = fakeButtonLabel.value
+  window.setTimeout(() => {
+    fakeButtonFeedback.value = ''
+  }, 1400)
+}
+
+function applyComboEffects(combo: ComboDecision): void {
+  for (let i = 0; i < combo.floatingBursts; i += 1) {
+    floatingAttack.spawn(i % 2 === 0 ? 'emoji' : 'badge')
+  }
+  for (let i = 0; i < combo.roastBursts; i += 1) {
+    roastInterrupt.triggerComboInterrupt()
+  }
+}
+
+function onShareCombo(combo: ComboDecision): void {
+  applyComboEffects(combo)
+}
+
+function onRetryCombo(combo: ComboDecision): void {
+  applyComboEffects(combo)
+}
+
+function onShareAttempt(): void {
+  memoryMock.trackCtaClick('share-result')
+  memoryMock.trackSpamClick('share-result')
+}
+
+function onRetryAttempt(): void {
+  memoryMock.trackCtaClick('retry-quiz')
+  memoryMock.trackSpamClick('retry-quiz')
+}
+
+function onRetryAction(): void {
+  memoryMock.trackQuizStart()
 }
 
 try {
@@ -218,13 +293,38 @@ watch(displayImageUrl, () => {
   imageFailed.value = false
 })
 
+watch(
+  () => prankEngine.triggerHistory.value[0]?.triggeredAt ?? 0,
+  (latestStamp) => {
+    if (!latestStamp) {
+      return
+    }
+
+    floatingAttack.registerActivity('prank_trigger')
+  },
+)
+
+watch(
+  () => result.value?.meme.id ?? '',
+  (memeId) => {
+    if (!memeId) {
+      return
+    }
+
+    roastInterrupt.registerResultReveal()
+    floatingAttack.registerActivity('progress')
+  },
+  { immediate: true },
+)
+
 void loadImgflipTemplateUrls()
 </script>
 
 <template>
-  <main class="screen">
+  <main class="screen prank-host">
     <p class="result-label">{{ uiCopy.result.title }}</p>
     <p class="result-subtitle">{{ uiCopy.result.subtitle }}</p>
+    <p v-if="memoryLine" class="memory-mock">{{ memoryLine }}</p>
 
     <section v-if="result" class="result-card">
       <img
@@ -259,18 +359,46 @@ void loadImgflipTemplateUrls()
     </section>
 
     <div class="actions">
-      <button type="button" class="primary-button share-button" :disabled="!result" @click="onShare">
-        {{ uiCopy.result.share }}
-      </button>
-      <RouterLink class="secondary-link retry-link" to="/quiz">{{ uiCopy.result.retry }}</RouterLink>
+      <BetrayalButton
+        type="button"
+        class="primary-button share-button"
+        prank-id="share-result"
+        combo-screen="result"
+        :label="uiCopy.result.share"
+        :disabled="!result"
+        @attempt="onShareAttempt"
+        @combo="onShareCombo"
+        @action="onShare"
+      />
+      <BetrayalButton
+        class="secondary-link retry-link"
+        prank-id="retry-quiz"
+        combo-screen="result"
+        :label="uiCopy.result.retry"
+        to="/quiz"
+        @attempt="onRetryAttempt"
+        @combo="onRetryCombo"
+        @action="onRetryAction"
+      />
     </div>
+
+    <button type="button" class="fake-action-button" @click="onFakeFixMe">{{ fakeButtonLabel }}</button>
+    <p v-if="fakeButtonFeedback" class="fake-action-feedback">{{ fakeButtonFeedback }}</p>
 
     <p v-if="shareFeedback" class="feedback">{{ shareFeedback }}</p>
     <RouterLink class="secondary-link" to="/">{{ uiCopy.result.home }}</RouterLink>
+
+    <FloatingMemeOverlay :items="floatingAttack.items.value" />
+    <RoastInterruptLayer :items="roastInterrupt.interrupts.value" />
   </main>
 </template>
 
 <style scoped>
+.prank-host {
+  position: relative;
+  overflow: hidden;
+}
+
 .result-label {
   margin: 0;
   font-size: 0.8rem;
@@ -430,6 +558,33 @@ h1 {
   text-align: center;
   font-size: 0.88rem;
   color: #8e3809;
+  font-weight: 700;
+}
+
+.fake-action-button {
+  align-self: center;
+  min-height: 36px;
+  border: 1px dashed #d6deef;
+  border-radius: 999px;
+  background: #f8fafe;
+  color: #506181;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+.fake-action-feedback {
+  margin: -12px 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #8e3809;
+  font-weight: 700;
+}
+
+.memory-mock {
+  margin: -10px 0 0;
+  color: #8e3809;
+  font-size: 0.82rem;
   font-weight: 700;
 }
 </style>
